@@ -1,0 +1,8 @@
+{
+  "domain": "auto_ui",
+  "name": "Auto UI",
+  "documentation": "https://www.example.com",
+  "dependencies": [],
+  "codeowners": ["joel@spiers.cc"],
+  "requirements": []
+}

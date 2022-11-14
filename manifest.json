@@ -1,8 +1,10 @@
 {
   "domain": "auto_ui",
   "name": "Auto UI",
+  "integration_type": "hub",
   "documentation": "https://www.example.com",
   "dependencies": [],
   "codeowners": ["joel@spiers.cc"],
-  "requirements": []
+  "requirements": [],
+  "iot_class": "cloud_polling"
 }

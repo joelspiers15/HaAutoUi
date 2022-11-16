@@ -1,4 +1,10 @@
-from constants import *
+from .constants import (
+    CARD_COUNT,
+    TIME_BLOCK_SIZE,
+    BLACKLISTED_ENTITIES,
+    DB_FILE,
+    TABLE
+)
 
 def get_outputs_sql(user_id, start_time, end_time, day_of_week):
     return f"""

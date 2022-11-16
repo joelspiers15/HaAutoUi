@@ -1,5 +1,3 @@
-
-
 # High level variables
 CARD_COUNT = 10
 TIME_BLOCK_SIZE = 90

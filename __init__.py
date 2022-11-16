@@ -49,6 +49,15 @@ def setup(hass, config): # todo: use config values instead of const
             _LOG.error("Error while setting up DB", e)
             return False
 
+    def update_components(call):
+        for user in users:
+            cards = get_cards(user)
+            i = 0
+            for card in cards:
+                _LOG.debug(f"Updating {DOMAIN}.{users[user]}_{i}={card[0]}")
+                hass.states.set(f"{DOMAIN}.{users[user]}_{i}", card[0])
+                i += 1
+
 
     def get_cards(user):
         start_time = datetime.now() - timedelta(minutes = TIME_BLOCK_SIZE/2)

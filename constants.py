@@ -1,6 +1,6 @@
 # High level variables
 CARD_COUNT = 10
-TIME_BLOCK_SIZE = 90
+TIME_BLOCK_SIZE = 120
 BLACKLISTED_ENTITIES = []
 
 # SQL connection

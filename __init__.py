@@ -32,15 +32,6 @@ def setup(hass, config): # todo: use config values instead of const
             for i in range(CARD_COUNT):
                 _LOG.debug(f"Initiliazing component: {DOMAIN}.{users[user]}_{i}")
                 hass.states.set(f"{DOMAIN}.{users[user]}_{i}", card_placeholder)
-
-    def update_components(call):
-        for user in users:
-            cards = get_cards(user)
-            i = 0
-            for card in cards:
-                _LOG.debug(f"Updating {DOMAIN}.{users[user]}_{i}={card[0]}")
-                hass.states.set(f"{DOMAIN}.{users[user]}_{i}", card[0])
-                i += 1
     
     def setup_db():
         try:
@@ -58,18 +49,11 @@ def setup(hass, config): # todo: use config values instead of const
             _LOG.error("Error while setting up DB", e)
             return False
 
-    def get_cards(user):
-        # Query list of cards for current time block and user
-        #   user_id == user_id
-        #   day_of_week == {current day of the week}
-        #   time_fired >= now() - ( TIME_BLOCK_SIZE/2 )
-        #   time_fired <= now() + ( TIME_BLOCK_SIZE/2 )
-        #   combine matching entity ids with new `count` field
-        #   sort by count
-        #   select top CARD_COUNT
 
+    def get_cards(user):
         start_time = datetime.now() - timedelta(minutes = TIME_BLOCK_SIZE/2)
         end_time = datetime.now() + timedelta(minutes = TIME_BLOCK_SIZE/2)
+        _LOG.debug(f"Getting actions from" + start_time.strftime("%H:%M:%S") + " to " + end_time.strftime("%H:%M:%S on weekday %w"))
         
         c = conn.cursor()
         c.execute(
@@ -106,11 +90,8 @@ def setup(hass, config): # todo: use config values instead of const
     init_outputs()
     update_components(None)
 
-    hass.states.set(f"{DOMAIN}.joel_0", "input_boolean.asleep")
-    hass.states.set(f"{DOMAIN}.joel_1", "script.fix_top_monitor")
-    hass.states.set(f"{DOMAIN}.joel_2", "remote.harmony_hub")
-    hass.states.set(f"{DOMAIN}.joel_3", "light.bedroom_light_1")
-    hass.states.set(f"{DOMAIN}.joel_4", "script.bedroom_relax")
+    # Register services
+    hass.services.register(DOMAIN, 'update_outputs', update_components)
 
     # Store each call_service event
     hass.bus.listen("call_service", store_user_action)
@@ -118,7 +99,7 @@ def setup(hass, config): # todo: use config values instead of const
     # Subscribe to updates every TIME_BLOCK_SIZE minutes
     hass.helpers.event.async_track_time_interval(
         update_components, 
-        timedelta(minutes=TIME_BLOCK_SIZE)
+        timedelta(minutes=TIME_BLOCK_SIZE/4)
     )
     
     # Return boolean to indicate that initialization was successful.

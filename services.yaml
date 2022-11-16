@@ -1,0 +1,2 @@
+update_outputs:
+  description: Manually trigger update of output components from actions database

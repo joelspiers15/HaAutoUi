@@ -53,24 +53,26 @@ def setup(hass, config): # todo: use config values instead of const
         for user in users:
             cards = get_cards(user)
             i = 0
-            for card in cards:
-                _LOG.debug(f"Updating {DOMAIN}.{users[user]}_{i}={card[0]}")
-                hass.states.set(f"{DOMAIN}.{users[user]}_{i}", card[0])
-                i += 1
+            for i in range(CARD_COUNT):
+                try:
+                    _LOG.debug(f"Updating {DOMAIN}.{users[user]}_{i}={cards[i][0]}")
+                    hass.states.set(f"{DOMAIN}.{users[user]}_{i}", cards[i][0])
+                except IndexError:
+                    hass.states.set(f"{DOMAIN}.{users[user]}_{i}", card_placeholder)
 
 
     def get_cards(user):
-        start_time = datetime.now() - timedelta(minutes = TIME_BLOCK_SIZE/2)
-        end_time = datetime.now() + timedelta(minutes = TIME_BLOCK_SIZE/2)
-        _LOG.debug(f"Getting actions from" + start_time.strftime("%H:%M:%S") + " to " + end_time.strftime("%H:%M:%S on weekday %w"))
+        start_time = datetime.utcnow() - timedelta(minutes = TIME_BLOCK_SIZE/2)
+        end_time = datetime.utcnow() + timedelta(minutes = TIME_BLOCK_SIZE/2)
+
+        _LOG.debug(f"Getting actions from " + start_time.strftime("%w %H:%M:%S utc") + " to " + end_time.strftime("%w %H:%M:%S utc"))
         
         c = conn.cursor()
         c.execute(
             get_outputs_sql(
                 user, 
-                start_time.strftime("%H:%M:%S"), 
-                end_time.strftime("%H:%M:%S"), 
-                datetime.now().strftime("%w")
+                start_time.strftime("%w %H:%M:%S"), 
+                end_time.strftime("%w %H:%M:%S")
             )
         )
     
@@ -88,7 +90,7 @@ def setup(hass, config): # todo: use config values instead of const
             return
         
         if (event.context.user_id in users and event.data["service_data"]["entity_id"] not in BLACKLISTED_ENTITIES):
-            _LOG.info(f"Storing user action {event.data['service_data']['entity_id']}")
+            _LOG.info(f"Storing user action {event.data['service_data']['entity_id']} at {event.time_fired}")
             entry = (event.context.id, event.context.user_id, event.data["service_data"]["entity_id"], event.time_fired)
 
             c = conn.cursor()

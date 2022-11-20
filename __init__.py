@@ -77,7 +77,8 @@ def setup(hass, config): # todo: use config values instead of const
                 user, 
                 start_time.strftime("%w %H:%M:%S"), 
                 end_time.strftime("%w %H:%M:%S"),
-                CARD_COUNT
+                CARD_COUNT,
+                ENTITIES_BLACKLIST
             )
         )
     

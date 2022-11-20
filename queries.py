@@ -6,7 +6,7 @@ from .constants import (
 
 _LOG = logging.getLogger(__name__)
 
-def get_outputs_sql(user_id, start_time, end_time, results_count):
+def get_outputs_sql(user_id, start_time, end_time, results_count, exclusions):
     q = f"""
         SELECT entity_id, COUNT(DISTINCT id) as count
 
@@ -15,6 +15,7 @@ def get_outputs_sql(user_id, start_time, end_time, results_count):
         WHERE strftime('%w %H:%M:%S', time_fired) >= '{start_time}' 
         AND strftime('%w %H:%M:%S', time_fired) < '{end_time}' 
         AND user_id = '{user_id}' 
+        {concat_exclusions(exclusions)}
 
         GROUP BY entity_id
         ORDER BY count DESC
@@ -22,6 +23,14 @@ def get_outputs_sql(user_id, start_time, end_time, results_count):
     """
     _LOG.debug(f"q = {q}")
     return q
+
+def concat_exclusions(exclusions):
+    toReturn = ""
+    for exclusion in exclusions:
+        toReturn += f"AND entity_id != '{exclusion}'\n"
+    
+    return toReturn
+
 
 def create_table_sql():
     q = f""" 

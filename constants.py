@@ -1,7 +1,7 @@
-# High level variables
-CARD_COUNT = 10
-TIME_BLOCK_SIZE = 120
-BLACKLISTED_ENTITIES = []
+# Config names
+CARD_COUNT_CONF = "card_count"
+TIME_BLOCK_SIZE_CONF = "time_block_min"
+ENTITIES_BLACKLIST_CONF = "entities_blacklist"
 
 # SQL connection
 DB_FILE = 'auto_ui.db'

@@ -5,15 +5,19 @@ from datetime import datetime, timedelta
 
 from .queries import get_outputs_sql, create_table_sql, add_record_sql
 from .constants import (
-    CARD_COUNT,
-    TIME_BLOCK_SIZE,
-    BLACKLISTED_ENTITIES,
+    CARD_COUNT_CONF,
+    TIME_BLOCK_SIZE_CONF,
+    ENTITIES_BLACKLIST_CONF,
     DB_FILE,
     TABLE
 )
 
 DOMAIN = 'auto_ui'
 DEPENDENCIES = []
+
+CARD_COUNT = 10
+TIME_BLOCK_SIZE = 120
+ENTITIES_BLACKLIST = []
 
 _LOG = logging.getLogger(__name__)
 
@@ -72,7 +76,8 @@ def setup(hass, config): # todo: use config values instead of const
             get_outputs_sql(
                 user, 
                 start_time.strftime("%w %H:%M:%S"), 
-                end_time.strftime("%w %H:%M:%S")
+                end_time.strftime("%w %H:%M:%S"),
+                CARD_COUNT
             )
         )
     
@@ -89,13 +94,29 @@ def setup(hass, config): # todo: use config values instead of const
             _LOG.debug("Not saving action, no entity id")
             return
         
-        if (event.context.user_id in users and event.data["service_data"]["entity_id"] not in BLACKLISTED_ENTITIES):
+        if (event.context.user_id in users):
             _LOG.info(f"Storing user action {event.data['service_data']['entity_id']} at {event.time_fired}")
             entry = (event.context.id, event.context.user_id, event.data["service_data"]["entity_id"], event.time_fired)
 
             c = conn.cursor()
             c.execute(add_record_sql(), entry)
             conn.commit()
+
+    conf = config[DOMAIN]
+    if CARD_COUNT_CONF in conf:
+        _LOG.debug(f"Custom card count: {conf[CARD_COUNT_CONF]}")
+        global CARD_COUNT
+        CARD_COUNT = conf [CARD_COUNT_CONF]
+    
+    if TIME_BLOCK_SIZE_CONF in conf:
+        _LOG.debug(f"Custom time block: {conf[TIME_BLOCK_SIZE_CONF]}")
+        global TIME_BLOCK_SIZE
+        TIME_BLOCK_SIZE = conf[TIME_BLOCK_SIZE_CONF]
+
+    if ENTITIES_BLACKLIST_CONF in conf:
+        _LOG.debug(f"Entities blacklist provided: {conf[ENTITIES_BLACKLIST_CONF]}")
+        global ENTITIES_BLACKLIST
+        ENTITIES_BLACKLIST = conf[ENTITIES_BLACKLIST_CONF] # TODO: Make use of this
 
     setup_db()
     init_outputs()

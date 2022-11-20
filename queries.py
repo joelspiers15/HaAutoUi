@@ -1,16 +1,12 @@
 import logging
 
 from .constants import (
-    CARD_COUNT,
-    TIME_BLOCK_SIZE,
-    BLACKLISTED_ENTITIES,
-    DB_FILE,
     TABLE
 )
 
 _LOG = logging.getLogger(__name__)
 
-def get_outputs_sql(user_id, start_time, end_time):
+def get_outputs_sql(user_id, start_time, end_time, results_count):
     q = f"""
         SELECT entity_id, COUNT(DISTINCT id) as count
 
@@ -22,7 +18,7 @@ def get_outputs_sql(user_id, start_time, end_time):
 
         GROUP BY entity_id
         ORDER BY count DESC
-        LIMIT {CARD_COUNT};
+        LIMIT {results_count};
     """
     _LOG.debug(f"q = {q}")
     return q

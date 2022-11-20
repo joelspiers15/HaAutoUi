@@ -26,12 +26,13 @@ users = {
     '67b4acb998374d4d807430d4e2daac42' : 'kat'
 } # todo: read users automatically
 
-card_placeholder = 'sensor.current_hass_version_2' # todo: use component that shows as blank
+card_placeholder = f'{DOMAIN}.placeholder' # todo: use component that shows as blank
 
 conn = None
 
 def setup(hass, config): # todo: use config values instead of const
     def init_outputs():
+        hass.states.set(card_placeholder, "Placeholder, as the db fills you'll see this less")
         for user in users:
             for i in range(CARD_COUNT):
                 _LOG.debug(f"Initiliazing component: {DOMAIN}.{users[user]}_{i}")

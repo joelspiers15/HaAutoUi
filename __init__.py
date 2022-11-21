@@ -5,6 +5,7 @@ from datetime import datetime, timedelta
 
 from .queries import get_outputs_sql, create_table_sql, add_record_sql
 from .constants import (
+    USERS_CONF,
     CARD_COUNT_CONF,
     TIME_BLOCK_SIZE_CONF,
     ENTITIES_BLACKLIST_CONF,
@@ -15,28 +16,24 @@ from .constants import (
 DOMAIN = 'auto_ui'
 DEPENDENCIES = []
 
+USERS = {}
 CARD_COUNT = 10
 TIME_BLOCK_SIZE = 120
 ENTITIES_BLACKLIST = []
 
 _LOG = logging.getLogger(__name__)
 
-users = {
-    'aecaac0f0f374df0be28f4918da681c1' : 'joel',
-    '67b4acb998374d4d807430d4e2daac42' : 'kat'
-} # todo: read users automatically
-
-card_placeholder = f'{DOMAIN}.placeholder' # todo: use component that shows as blank
+card_placeholder = f'{DOMAIN}.placeholder'
 
 conn = None
 
 def setup(hass, config): # todo: use config values instead of const
     def init_outputs():
         hass.states.set(card_placeholder, "Placeholder, as the db fills you'll see this less")
-        for user in users:
+        for user in USERS:
             for i in range(CARD_COUNT):
-                _LOG.debug(f"Initiliazing component: {DOMAIN}.{users[user]}_{i}")
-                hass.states.set(f"{DOMAIN}.{users[user]}_{i}", card_placeholder)
+                _LOG.debug(f"Initiliazing component: {DOMAIN}.{USERS[user]}_{i}")
+                hass.states.set(f"{DOMAIN}.{USERS[user]}_{i}", card_placeholder)
     
     def setup_db():
         try:
@@ -55,15 +52,16 @@ def setup(hass, config): # todo: use config values instead of const
             return False
 
     def update_components(call):
-        for user in users:
+        for user in USERS:
             cards = get_cards(user)
             i = 0
             for i in range(CARD_COUNT):
                 try:
-                    _LOG.debug(f"Updating {DOMAIN}.{users[user]}_{i}={cards[i][0]}")
-                    hass.states.set(f"{DOMAIN}.{users[user]}_{i}", cards[i][0])
+                    _LOG.info(f"Updating {DOMAIN}.{USERS[user]}_{i}={cards[i][0]}")
+                    hass.states.set(f"{DOMAIN}.{USERS[user]}_{i}", cards[i][0])
                 except IndexError:
-                    hass.states.set(f"{DOMAIN}.{users[user]}_{i}", card_placeholder)
+                    # If the DB returned less entities than CARD_COUNT pad the rest with a placeholder card
+                    hass.states.set(f"{DOMAIN}.{USERS[user]}_{i}", card_placeholder)
 
 
     def get_cards(user):
@@ -87,7 +85,6 @@ def setup(hass, config): # todo: use config values instead of const
 
     # Listener to handle fired events
     def store_user_action(event):
-        # Only store user performed actions with entity ids
         if event.context.user_id is None:
             _LOG.debug("Not saving action, user_id null")
             return
@@ -95,9 +92,13 @@ def setup(hass, config): # todo: use config values instead of const
         if "entity_id" not in event.data["service_data"]:
             _LOG.debug("Not saving action, no entity id")
             return
+
+        if isinstance(event.data["service_data"]["entity_id"], list):
+            _LOG.debug("Not saving action, entity_id lists not supported")
+            return
         
-        if (event.context.user_id in users):
-            _LOG.info(f"Storing user action {event.data['service_data']['entity_id']} at {event.time_fired}")
+        if (event.context.user_id in USERS):
+            _LOG.info(f"Storing user's ({USERS[event.context.user_id]}) action {event.data['service_data']['entity_id']} at {event.time_fired}")
             entry = (event.context.id, event.context.user_id, event.data["service_data"]["entity_id"], event.time_fired)
 
             c = conn.cursor()
@@ -105,10 +106,19 @@ def setup(hass, config): # todo: use config values instead of const
             conn.commit()
 
     conf = config[DOMAIN]
+
+    if USERS_CONF in conf:
+        _LOG.debug(f"Users provided: {conf[USERS_CONF]}")
+        global USERS
+        USERS = conf[USERS_CONF]
+    else:
+        _LOG.error("users config entry is required")
+        return false
+
     if CARD_COUNT_CONF in conf:
         _LOG.debug(f"Custom card count: {conf[CARD_COUNT_CONF]}")
         global CARD_COUNT
-        CARD_COUNT = conf [CARD_COUNT_CONF]
+        CARD_COUNT = conf[CARD_COUNT_CONF]
     
     if TIME_BLOCK_SIZE_CONF in conf:
         _LOG.debug(f"Custom time block: {conf[TIME_BLOCK_SIZE_CONF]}")
@@ -118,9 +128,11 @@ def setup(hass, config): # todo: use config values instead of const
     if ENTITIES_BLACKLIST_CONF in conf:
         _LOG.debug(f"Entities blacklist provided: {conf[ENTITIES_BLACKLIST_CONF]}")
         global ENTITIES_BLACKLIST
-        ENTITIES_BLACKLIST = conf[ENTITIES_BLACKLIST_CONF] # TODO: Make use of this
+        ENTITIES_BLACKLIST = conf[ENTITIES_BLACKLIST_CONF]
 
-    setup_db()
+    if not setup_db():
+        return False
+
     init_outputs()
     update_components(None)
 

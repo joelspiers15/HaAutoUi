@@ -45,26 +45,31 @@ card:
 ```
 
 ## Configuration
-Config entry in Home Assistant config
+Config entry in Home Assistant config. `users` is required and should be formatted as `[haUserId]: [friendly name for the user]`
+| Key              | Required | Default | Description                                                     |
+|------------------|----------|---------|-----------------------------------------------------------------|
+| users            | yes      | []      | List of users to store actions and create output components for |
+| card_count       | no       | 10      | Number of cards to output                                       |
+| time_block_min   | no       | 120     | Time window size in minutes to match events to.                 |
+| entity_blacklist | no       | []      | Array of entity_ids to exclude from output                      |
 
-### Minimal config:
+### Examples
+#### Minimal config:
 
 ```
 auto_ui:
+  users:
+    aecaac0f0f374df0be98f4918da681c1: joel
 ```
 
-### Full config
+#### Full config
 ```
 auto_ui:
+  users:
+    aecaac0f0f374df0be98f4918da681c1: joel
   card_count: 10
   time_block_min: 120
   entity_blacklist:
     - light.ignored_light
     - switch.ignored_switch
 ```
-
-| Key              | Default | Description                                     |
-|------------------|---------|-------------------------------------------------|
-| card_count       | 10      | Number of cards to output                       |
-| time_block_min   | 120     | Time window size in minutes to match events to  |
-| entity_blacklist | []      | Array of entity_ids to exclude from output      |
